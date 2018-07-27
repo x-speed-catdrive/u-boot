@@ -27,50 +27,52 @@
 					  115200, 230400, 460800, 921600 }
 
 /* Default Env vars */
-#define CONFIG_IPADDR			0.0.0.0	/* In order to cause an error */
-#define CONFIG_SERVERIP			0.0.0.0	/* In order to cause an error */
+#define CONFIG_IPADDR			192.168.1.11	/* In order to cause an error */
+#define CONFIG_SERVERIP			192.168.1.100	/* In order to cause an error */
 #define CONFIG_NETMASK			255.255.255.0
 #define CONFIG_GATEWAYIP		10.4.50.254
 #define CONFIG_HAS_ETH1
 #define CONFIG_HAS_ETH2
 #define CONFIG_ETHPRIME			"eth0"
-#define CONFIG_ROOTPATH                 "/srv/nfs/" /* Default Dir for NFS */
-#define CONFIG_EXTRA_ENV_SETTINGS	"kernel_addr=0x5000000\0"	\
+#define CONFIG_EXTRA_ENV_SETTINGS	"kernel_addr=0x8000000\0"	\
 					"initrd_addr=0xa00000\0"	\
 					"initrd_size=0x2000000\0"	\
-					"fdt_addr=0x4f00000\0"		\
-					"loadaddr=0x5000000\0"		\
+					"fdt_addr=0x7f00000\0"		\
+					"loadaddr=0x8000000\0"		\
 					"fdt_high=0xffffffffffffffff\0"	\
 					"hostname=marvell\0"		\
-					"ramfs_addr=0x8000000\0"	\
-					"ramfs_name=-\0"		\
-					"fdt_name=fdt.dtb\0"		\
+					"fdt_name=-\0"		\
 					"netdev=eth0\0"			\
 					"ethaddr=00:51:82:11:22:00\0"	\
 					"eth1addr=00:51:82:11:22:01\0"	\
 					"eth2addr=00:51:82:11:22:02\0"	\
 					"eth3addr=00:51:82:11:22:03\0"	\
-					"image_name=Image\0"		\
-					"get_ramfs=if test \"${ramfs_name}\"" \
-						" != \"-\"; then setenv " \
-						"ramfs_addr 0x8000000; " \
-						"tftpboot $ramfs_addr " \
-						"$ramfs_name; else setenv " \
-						"ramfs_addr -;fi\0"	\
-					"get_images=tftpboot $kernel_addr " \
-						"$image_name; tftpboot " \
-						"$fdt_addr $fdt_name; " \
-						"run get_ramfs\0"	\
+					"image_name=armada3720-nm01.itb\0" \
+					"get_dtb=if test \\\"$fdt_name\\\" != \\\"-\\\";" \
+						"then " \
+							"$get_dtb_medium $fdt_addr $fdt_name; " \
+							"setenv boot_cmd \"booti $kernel_addr - $fdt_addr\"; " \
+						"else " \
+							"setenv boot_cmd \"bootm $kernel_addr#config@1\"; " \
+						"fi\0"	\
+					"get_images_tftp=setenv get_dtb_medium tftpboot; " \
+						"$get_dtb_medium $kernel_addr $image_name; " \
+						"run get_dtb\0"	 \
+					"get_images_usb=usb reset; setenv get_dtb_medium \"fatload usb 0\"; " \
+						"$get_dtb_medium $kernel_addr $image_name; "\
+						"run get_dtb\0"		\
+					"get_images_mmc=mmc dev 1; setenv get_dtb_medium \"fatload mmc 1:1\"; "\
+						"$get_dtb_medium $kernel_addr $image_name; " \
+						"run get_dtb\0"	\
 					"console=" CONFIG_DEFAULT_CONSOLE "\0"\
-					"root=root=/dev/nfs rw\0"	\
-					"set_bootargs=setenv bootargs $console"\
-						" $root ip=$ipaddr:$serverip:" \
-						"$gatewayip:$netmask:$hostname"\
-						":$netdev:none nfsroot="\
-						"$serverip:$rootpath " \
-						"$extra_params"
-#define CONFIG_BOOTCOMMAND	"run get_images; run set_bootargs; " \
-				"booti $kernel_addr $ramfs_addr $fdt_addr"
+					"set_bootargs=setenv bootargs $console\0"\
+					"bootcmd_tftp=run get_images_tftp; run set_bootargs; "\
+						"$boot_cmd\0" \
+					"bootcmd_usb=run get_images_usb; run set_bootargs; "\
+						"$boot_cmd\0" \
+					"bootcmd_mmc=run get_images_mmc; run set_bootargs; "\
+						"$boot_cmd\0"
+#define CONFIG_BOOTCOMMAND	"run get_images_mmc; run set_bootargs; $boot_cmd"
 #define CONFIG_ENV_OVERWRITE	/* ethaddr can be reprogrammed */
 /*
  * For booting Linux, the board info and command line data
@@ -129,20 +131,22 @@
 #elif defined(CONFIG_MVEBU_MMC_BOOT)
 #define CONFIG_ENV_IS_IN_MMC
 #define CONFIG_SYS_MMC_ENV_PART		1 /* 0 - DATA, 1 - BOOT0, 2 - BOOT1 */
-/* Environment in SPI NAND flash */
-#elif defined(CONFIG_MVEBU_SPINAND_BOOT)
-#define CONFIG_ENV_IS_IN_SPI_NAND
 #endif
 
 /* Assume minimum flash/eMMC boot partition size of 4MB
  * and save the environment at the end of the boot device
 */
-#define CONFIG_ENV_SIZE			(64 << 10) /* 64KiB */
-#define CONFIG_ENV_SECT_SIZE		(64 << 10) /* 64KiB sectors */
-#if defined(CONFIG_ENV_IS_IN_NAND) || defined(CONFIG_ENV_IS_IN_SPI_NAND)
+#ifdef CONFIG_SPI_FLASH_SPANSION
+#define CONFIG_ENV_SIZE				(256 << 10) /* 256KiB */
+#define CONFIG_ENV_SECT_SIZE		(256 << 10) /* 256KiB sectors */
+#else
+#define CONFIG_ENV_SIZE				( 64 << 10) /* 64KiB */
+#define CONFIG_ENV_SECT_SIZE		( 64 << 10) /* 64KiB sectors */
+#endif
+#ifdef CONFIG_MVEBU_NAND_BOOT
 #define CONFIG_ENV_OFFSET		0x400000
 #else
-#define CONFIG_ENV_OFFSET		(0x400000 - CONFIG_ENV_SIZE)
+#define CONFIG_ENV_OFFSET		(0x200000 - CONFIG_ENV_SIZE)
 #endif
 
 #define CONFIG_USB_MAX_CONTROLLER_COUNT (CONFIG_SYS_USB_EHCI_MAX_ROOT_PORTS + \
@@ -177,5 +181,11 @@
  * The EEPROM ST M24C64 has 32 byte page write mode and takes up to 10 msec.
  */
 #define CONFIG_SYS_EEPROM_PAGE_WRITE_DELAY_MS 10
+
+/*
+ * nm01 catdisk Config
+ */
+#define CONFIG_BOARD_TYPES
+#define CONFIG_FAT_WRITE
 
 #endif /* _CONFIG_MVEBU_ARMADA_H */

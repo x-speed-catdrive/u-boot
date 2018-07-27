@@ -146,7 +146,7 @@ int board_init(void)
 #endif
 
 	/* enable serdes lane 2 mux for sata phy */
-	board_comphy_usb3_sata_mux(COMPHY_LANE2_MUX_SATA);
+	/* board_comphy_usb3_sata_mux(COMPHY_LANE2_MUX_SATA); */
 
 	return 0;
 }
