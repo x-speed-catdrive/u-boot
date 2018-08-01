@@ -47,7 +47,7 @@
 					"eth1addr=00:51:82:11:22:01\0"	\
 					"eth2addr=00:51:82:11:22:02\0"	\
 					"eth3addr=00:51:82:11:22:03\0"	\
-					"image_name=armada3720-nm01.itb\0" \
+					"image_name=armada3720-nm01-catdisk.itb\0" \
 					"get_dtb=if test \\\"$fdt_name\\\" != \\\"-\\\";" \
 						"then " \
 							"$get_dtb_medium $fdt_addr $fdt_name; " \

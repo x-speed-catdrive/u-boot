@@ -137,7 +137,7 @@ int board_usb3_vbus_init(void)
 
 int board_init(void)
 {
-	board_usb3_vbus_init();
+	/* board_usb3_vbus_init(); */
 
 	/* adress of boot parameters */
 	gd->bd->bi_boot_params = CONFIG_SYS_SDRAM_BASE + 0x100;

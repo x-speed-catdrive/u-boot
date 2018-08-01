@@ -66,48 +66,22 @@
 		device_type = "memory";
 		reg = <0x00000000 0x00000000 0x00000000 0x20000000>;
 	};
-
-	/*regulator_sata_power: sata-power-regulator {
+	regulator_sata_power: sata-power-regulator {
 		compatible = "regulator-fixed";
 		regulator-name = "sata-power";
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 		enable-active-high;
 		startup-delay-us = <200000>;
-		gpio = <&expander0 2 GPIO_ACTIVE_HIGH>;
+		gpio = <&gpiosb 0 GPIO_ACTIVE_HIGH>;
 	};
 
-	reg_usb3_vbus: usb3_vbus@0 {
-		compatible = "regulator-fixed";
-		regulator-name = "usb3-vbus";
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-		shutdown-delay-us = <1000000>;
-		gpio = <&expander0 1 GPIO_ACTIVE_HIGH>;
-	};*/
-
-	vcc_sd_reg0: regulator@0 {
-		compatible = "regulator-gpio";
-		regulator-name = "vcc_sd0";
-		regulator-min-microvolt = <1800000>;
-		regulator-max-microvolt = <3300000>;
-		regulator-type = "voltage";
-		states = <1800000 0x1
-			  3300000 0x0>;
-		gpios = <&gpionb 4 GPIO_ACTIVE_HIGH>;
-	};
-};
-
-&mdio {
-	ethphy0: ethernet-phy@0 {
-		reg = <0>;
-	};
 };
 
 &comphy {
 	phy0 {
-		phy-type = <COMPHY_TYPE_USB3>;
-		phy-speed = <COMPHY_SPEED_5G>;
+		phy-type = <COMPHY_TYPE_SGMII1>;
+		phy-speed = <COMPHY_SPEED_1_25G>;
 	};
 
 	phy1 {
@@ -122,6 +96,22 @@
 	};
 };
 
+&mdio {
+	ethphy0: ethernet-phy@0 {
+		reg = <0>;
+	};
+	ethphy1: ethernet-phy@1 {
+		reg = <1>;
+	};
+};
+
+&eth1 {
+	status = "okay";
+	phy-mode = "sgmii";
+	phy = <&ethphy1>;
+};
+
+
 &eth0 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&rgmii_pins>, <&smi_pins>;
@@ -130,35 +120,40 @@
 	phy = <&ethphy0>;
 };
 
+
 &i2c0 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&i2c1_pins>;
 	status = "okay";
-	/*expander0: pca953x@22 {
-		compatible = "nxp,pca9555";
-                #gpio-cells = <2>;
-		reg = <0x22>;
-		status = "okay";
-	};*/
 };
 
 &scsi {
 	status = "okay";
 };
 
+&pinctrl_sb{
+	usb32_drvvbus0:usb32_drvvbus0-pins{
+		groups = "usb32_drvvbus0";
+		unction = "gpio";
+	};
+};
+
 /* CON3 */
 &sata {
-	/*power-supply = <&regulator_sata_power>;*/
+	pinctrl-names = "default";
+	pinctrl-0 = <&usb32_drvvbus0>;
+	power-supply = <&regulator_sata_power>;
 	status = "okay";
 };
 
 &sdhci0 {
 	bus-width = <4>;
-	/*vqmmc-supply = <&vcc_sd_reg0>;*/
+	//vqmmc-supply = <&vcc_sd_reg0>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&sdio_pins>;
 	status = "okay";
 };
+
 
 &sdhci1 {
 	non-removable;
@@ -202,27 +197,7 @@
 	status = "okay";
 };
 
-&uart1 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&uart2_pins>;
-	status = "okay";
-};
-
 /* CON29 */
 &usb2 {
-	status = "okay";
-};
-
-/* CON31 */
-&usb3 {
-	/*vbus-supply = <&reg_usb3_vbus>;*/
-	status = "okay";
-};
-
-/* CON17 */
-&pcie0 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pcie_pins>;
-	/*reset-gpio = <&gpiosb 3 GPIO_ACTIVE_HIGH>;*/
 	status = "okay";
 };
