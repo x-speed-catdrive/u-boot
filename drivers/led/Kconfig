@@ -9,6 +9,13 @@ config LED
 	  can provide access to board-specific LEDs. Use of the device tree
 	  for configuration is encouraged.
 
+config LEDS_AW2013
+        bool "LED Support for AW2013"
+	depends on LED
+	depends on DM_I2C
+	help
+	  This option enables support for LEDs connected to AW2013.
+
 config SPL_LED
 	bool "Enable LED support in SPL"
 	depends on SPL && SPL_DM

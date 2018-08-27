@@ -135,6 +135,37 @@ int board_usb3_vbus_init(void)
 	return 0;
 }
 
+static int  log_out(int enable){
+#ifdef CONFIG_SILENT_CONSOLE
+	if (enable)
+		gd->flags &= ~GD_FLG_SILENT;
+	else
+		gd->flags |= GD_FLG_SILENT;
+#endif
+	return 0;
+}
+
+extern int do_i2c(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[]);
+static void aw2013_init(void)
+{
+	cmd_tbl_t *cmdtp = NULL;
+	int flag = 0;
+	int argc = 3;
+	char *argv[4];
+
+	log_out(0);
+	argv[1] = "dev";
+	argv[2] = "0";
+	do_i2c(cmdtp, flag, argc, argv);
+
+	argc = 2;
+	argv[1] = "probe";
+	do_i2c(cmdtp, flag, argc, argv);
+	log_out(1);
+
+	return ;
+}
+
 int board_init(void)
 {
 	/* board_usb3_vbus_init(); */
@@ -144,7 +175,7 @@ int board_init(void)
 #ifdef CONFIG_OF_CONTROL
 	printf("U-Boot DT blob at : %p\n", gd->fdt_blob);
 #endif
-
+	aw2013_init();
 	/* enable serdes lane 2 mux for sata phy */
 	/* board_comphy_usb3_sata_mux(COMPHY_LANE2_MUX_SATA); */
 

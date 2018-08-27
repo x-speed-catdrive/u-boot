@@ -49,7 +49,7 @@
 #include "armada-372x.dtsi"
 
 / {
-	model = "nm01-catdisk";
+	model = "Marvell Armada 3720 for CATDRIVE";
 	compatible = "marvell,armada-3720-db-v2", "marvell,armada3720", "marvell,armada3710";
 
 	chosen {
@@ -80,13 +80,13 @@
 
 &comphy {
 	phy0 {
-		phy-type = <COMPHY_TYPE_SGMII1>;
-		phy-speed = <COMPHY_SPEED_1_25G>;
+		phy-type = <COMPHY_TYPE_USB3>;
+		phy-speed = <COMPHY_SPEED_5G>;
 	};
 
 	phy1 {
-		phy-type = <COMPHY_TYPE_PEX0>;
-		phy-speed = <COMPHY_SPEED_2_5G>;
+		phy-type = <COMPHY_TYPE_SGMII0>;
+		phy-speed = <COMPHY_SPEED_1_25G>;
 	};
 
 	phy2 {
@@ -105,26 +105,30 @@
 	};
 };
 
-&eth1 {
-	status = "okay";
-	phy-mode = "sgmii";
-	phy = <&ethphy1>;
-};
-
-
 &eth0 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&rgmii_pins>, <&smi_pins>;
-	status = "okay";
-	phy-mode = "rgmii";
+	pinctrl-0 = <&smi_pins>;
+	phy-mode = "sgmii";
 	phy = <&ethphy0>;
+	status = "okay";
 };
-
 
 &i2c0 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&i2c1_pins>;
 	status = "okay";
+	aw2013@45 {
+		compatible = "awinic,aw2013";
+        reg = <0x45>;
+		status = "okay";
+		max-brightness = <255>;
+		max-current = <3>;
+		rise-time-ms = <2>;
+		hold-time-ms = <1>;
+		fall-time-ms = <2>;
+		off-time-ms = <1>;
+		breathing-id = <2>;
+	};
 };
 
 &scsi {

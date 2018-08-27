@@ -1978,7 +1978,7 @@ static __maybe_unused void i2c_reloc(void)
  * Returns zero on success, CMD_RET_USAGE in case of misuse and negative
  * on error.
  */
-static int do_i2c(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+int do_i2c(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 {
 	cmd_tbl_t *c;
 
