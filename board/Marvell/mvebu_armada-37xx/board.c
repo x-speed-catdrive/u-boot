@@ -12,9 +12,16 @@
 #include <asm/arch/cpu.h>
 #include <asm/arch/soc.h>
 #include <power/regulator.h>
+#include <asm-generic/gpio.h>
+#include <dt-bindings/gpio/armada-3700-gpio.h>
+#include <dm/device.h>
+#include <dm/lists.h>
+#include <dm/pinctrl.h>
+#include <dm/uclass.h>
 #ifdef CONFIG_BOARD_CONFIG_EEPROM
 #include <mvebu_cfg_eeprom.h>
 #endif
+#include <nm_common.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -166,6 +173,118 @@ static void aw2013_init(void)
 	return ;
 }
 
+static int get_board_type(void)
+{
+	int value = 0;
+	unsigned int gpio[3];
+	int ret;
+	
+	ret = gpio_lookup_name(VERCTL_0, NULL, NULL, &gpio[0]);
+	if (ret)
+		printf("GPIO: '%s' not found\n", VERCTL_0);
+	
+	ret = gpio_lookup_name(VERCTL_1, NULL, NULL, &gpio[1]);
+	if (ret)
+		printf("GPIO: '%s' not found\n", VERCTL_1);
+
+	ret = gpio_lookup_name(VERCTL_2, NULL, NULL, &gpio[2]);
+	if (ret)
+		printf("GPIO: '%s' not found\n", VERCTL_2);
+
+	gpio_free(gpio[0]);
+	gpio_free(gpio[1]);
+	gpio_free(gpio[2]);
+	
+	gpio_request(gpio[0], "verctl_0");
+	gpio_request(gpio[1], "verctl_1");
+	gpio_request(gpio[2], "verctl_2");
+	
+	gpio_direction_input(gpio[0]);
+	gpio_direction_input(gpio[1]);
+	gpio_direction_input(gpio[2]);
+	
+	mdelay(2);
+	
+	value += 1 * gpio_get_value(gpio[0]);
+	value += 2 * gpio_get_value(gpio[1]);
+	value += 4 * gpio_get_value(gpio[2]);
+	
+	gd->board_type = value;
+
+	return 0;
+}
+
+#define LED_INT					"GPIO14"
+#define FIQ_INT					"GPIO119"
+
+#define EN_5V					"GPIO20"
+#define KEY_RESET				"GPIO23"
+#define FAN_CTL					"GPIO24"
+#define PHY_INT			 		"GPIO220"
+#define PHY_RESET		 		"GPIO221"
+
+
+static int hwware_reset(void)
+{
+	unsigned int gpio;
+	int ret;
+	
+	ret = gpio_lookup_name(LED_INT, NULL, NULL, &gpio);
+	if (ret)
+		printf("GPIO: '%s' not found\n", LED_INT);
+	gpio_free(gpio);
+	gpio_request(gpio, "led_int");
+	gpio_direction_input(gpio);
+
+	ret = gpio_lookup_name(FIQ_INT, NULL, NULL, &gpio);
+	if (ret)
+		printf("GPIO: '%s' not found\n", FIQ_INT);
+	gpio_free(gpio);
+	gpio_request(gpio, "fiq_int");
+	gpio_direction_input(gpio);
+
+	ret = gpio_lookup_name(EN_5V, NULL, NULL, &gpio);
+	if (ret)
+		printf("GPIO: '%s' not found\n", EN_5V);
+	gpio_free(gpio);
+	gpio_request(gpio, "en_5v");
+	gpio_direction_output(gpio, 0);
+
+	ret = gpio_lookup_name(KEY_RESET, NULL, NULL, &gpio);
+	if (ret)
+		printf("GPIO: '%s' not found\n", KEY_RESET);
+	gpio_free(gpio);
+	gpio_request(gpio, "key_reset");
+	gpio_direction_input(gpio);
+
+	ret = gpio_lookup_name(FAN_CTL, NULL, NULL, &gpio);
+	if (ret)
+		printf("GPIO: '%s' not found\n", FAN_CTL);
+	gpio_free(gpio);
+	gpio_request(gpio, "fan_ctl");
+	gpio_direction_output(gpio, 0);
+
+	ret = gpio_lookup_name(PHY_INT, NULL, NULL, &gpio);
+	if (ret)
+		printf("GPIO: '%s' not found\n", PHY_INT);
+	gpio_free(gpio);
+	gpio_request(gpio, "phy_int");
+	gpio_direction_input(gpio);
+
+	ret = gpio_lookup_name(PHY_RESET, NULL, NULL, &gpio);
+	if (ret)
+		printf("GPIO: '%s' not found\n", PHY_RESET);
+	gpio_free(gpio);
+	gpio_request(gpio, "phy_reset");
+	gpio_direction_output(gpio, 1);
+	mdelay(20);
+	gpio_set_value(gpio, 0);
+	mdelay(20);
+	gpio_set_value(gpio, 1);
+
+	return 0;
+}
+
 int board_init(void)
 {
 	/* board_usb3_vbus_init(); */
@@ -175,7 +294,12 @@ int board_init(void)
 #ifdef CONFIG_OF_CONTROL
 	printf("U-Boot DT blob at : %p\n", gd->fdt_blob);
 #endif
-	aw2013_init();
+	get_board_type();
+	if (NM05 == gd->board_type) {
+		hwware_reset();
+		aw2013_init();
+	}
+	
 	/* enable serdes lane 2 mux for sata phy */
 	/* board_comphy_usb3_sata_mux(COMPHY_LANE2_MUX_SATA); */
 
