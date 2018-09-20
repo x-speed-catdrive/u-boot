@@ -175,10 +175,42 @@ static void aw2013_init(void)
 
 static int get_board_type(void)
 {
-	int value = 0;
-	unsigned int gpio[3];
-	int ret;
-	
+	int value = 0, ret;
+	unsigned int selector = 0, gpio[3];;
+	struct udevice *dev;
+	const struct pinctrl_ops *ops;
+
+	/* set jtag function as gpio mode */
+	ret = uclass_get_device(UCLASS_PINCTRL, 0, &dev);
+	if (ret){
+		printf("Cannot get armada-37xx-pinctrl udevice\n");
+		return 0;
+	}
+	ops = pinctrl_get_ops(dev);
+	if (!ops) {
+		dev_dbg(dev, "ops is not set.  Do not bind.\n");
+		return 0;
+	}
+	ret = ops->pinmux_group_set(dev, selector, 1);
+	if(ret)
+		printf("pinmux_group_set error\n");
+
+	/* set pcie reset function to gpio */
+	ret = uclass_get_device(UCLASS_PINCTRL, 1, &dev);
+	if (ret){
+		printf("Cannot get armada-37xx-pinctrl udevice\n");
+		return 0;
+	}
+	ops = pinctrl_get_ops(dev);
+	if (!ops) {
+		dev_dbg(dev, "ops is not set.  Do not bind.\n");
+		return 0;
+	}
+	selector = 5;
+	ret = ops->pinmux_group_set(dev, selector, 1);
+	if(ret)
+		printf("pinmux_group_set error\n");
+
 	ret = gpio_lookup_name(VERCTL_0, NULL, NULL, &gpio[0]);
 	if (ret)
 		printf("GPIO: '%s' not found\n", VERCTL_0);
@@ -214,73 +246,79 @@ static int get_board_type(void)
 	return 0;
 }
 
-#define LED_INT					"GPIO14"
-#define FIQ_INT					"GPIO119"
-
-#define EN_5V					"GPIO20"
-#define KEY_RESET				"GPIO23"
-#define FAN_CTL					"GPIO24"
-#define PHY_INT			 		"GPIO220"
-#define PHY_RESET		 		"GPIO221"
-
-
 static int hwware_reset(void)
 {
 	unsigned int gpio;
 	int ret;
-	
+
 	ret = gpio_lookup_name(LED_INT, NULL, NULL, &gpio);
 	if (ret)
 		printf("GPIO: '%s' not found\n", LED_INT);
-	gpio_free(gpio);
-	gpio_request(gpio, "led_int");
-	gpio_direction_input(gpio);
+	else{
+		gpio_free(gpio);
+		gpio_request(gpio, "led_int");
+		gpio_direction_input(gpio);
+	}
 
 	ret = gpio_lookup_name(FIQ_INT, NULL, NULL, &gpio);
-	if (ret)
+	if (ret) 
 		printf("GPIO: '%s' not found\n", FIQ_INT);
-	gpio_free(gpio);
-	gpio_request(gpio, "fiq_int");
-	gpio_direction_input(gpio);
+	else{
+		gpio_free(gpio);
+		gpio_request(gpio, "fiq_int");
+		gpio_direction_input(gpio);
+	}
 
+	/*
 	ret = gpio_lookup_name(EN_5V, NULL, NULL, &gpio);
 	if (ret)
 		printf("GPIO: '%s' not found\n", EN_5V);
-	gpio_free(gpio);
-	gpio_request(gpio, "en_5v");
-	gpio_direction_output(gpio, 0);
+	else{
+		gpio_free(gpio);
+		gpio_request(gpio, "en_5v");
+		gpio_direction_output(gpio, 0);
+	}
+	*/
 
 	ret = gpio_lookup_name(KEY_RESET, NULL, NULL, &gpio);
 	if (ret)
 		printf("GPIO: '%s' not found\n", KEY_RESET);
-	gpio_free(gpio);
-	gpio_request(gpio, "key_reset");
-	gpio_direction_input(gpio);
+	else{
+		gpio_free(gpio);
+		gpio_request(gpio, "key_reset");
+		gpio_direction_input(gpio);
+	}
 
 	ret = gpio_lookup_name(FAN_CTL, NULL, NULL, &gpio);
 	if (ret)
 		printf("GPIO: '%s' not found\n", FAN_CTL);
-	gpio_free(gpio);
-	gpio_request(gpio, "fan_ctl");
-	gpio_direction_output(gpio, 0);
+	else{
+		gpio_free(gpio);
+		gpio_request(gpio, "fan_ctl");
+		gpio_direction_output(gpio, 1);
+	}
 
 	ret = gpio_lookup_name(PHY_INT, NULL, NULL, &gpio);
 	if (ret)
 		printf("GPIO: '%s' not found\n", PHY_INT);
-	gpio_free(gpio);
-	gpio_request(gpio, "phy_int");
-	gpio_direction_input(gpio);
+	else{
+		gpio_free(gpio);
+		gpio_request(gpio, "phy_int");
+		gpio_direction_input(gpio);
+	}
 
 	ret = gpio_lookup_name(PHY_RESET, NULL, NULL, &gpio);
 	if (ret)
 		printf("GPIO: '%s' not found\n", PHY_RESET);
-	gpio_free(gpio);
-	gpio_request(gpio, "phy_reset");
-	gpio_direction_output(gpio, 1);
-	mdelay(20);
-	gpio_set_value(gpio, 0);
-	mdelay(20);
-	gpio_set_value(gpio, 1);
+	else{
+		gpio_free(gpio);
+		gpio_request(gpio, "phy_reset");
+		gpio_direction_output(gpio, 1);
+		mdelay(20);
+		gpio_set_value(gpio, 0);
+		mdelay(20);
+		gpio_set_value(gpio, 1);
+	}
 
 	return 0;
 }

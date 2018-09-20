@@ -41,13 +41,13 @@
 					"loadaddr=0x8000000\0"		\
 					"fdt_high=0xffffffffffffffff\0"	\
 					"hostname=marvell\0"		\
-					"fdt_name=-\0"		\
+					"fdt_name=armada-3720-catdrive.dtb\0"		\
 					"netdev=eth0\0"			\
 					"ethaddr=00:51:82:11:22:00\0"	\
 					"eth1addr=00:51:82:11:22:01\0"	\
 					"eth2addr=00:51:82:11:22:02\0"	\
 					"eth3addr=00:51:82:11:22:03\0"	\
-					"image_name=armada3720-nm01-catdisk.itb\0" \
+					"image_name=Image\0" \
 					"get_dtb=if test \\\"$fdt_name\\\" != \\\"-\\\";" \
 						"then " \
 							"$get_dtb_medium $fdt_addr $fdt_name; " \

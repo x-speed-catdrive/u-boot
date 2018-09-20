@@ -309,6 +309,7 @@ void m88e1518_phy_writebits(struct phy_device *phydev,
 
 static int m88e1518_config(struct phy_device *phydev)
 {
+	int reg;
 	/*
 	 * As per Marvell Release Notes - Alaska 88E1510/88E1518/88E1512
 	 * /88E1514 Rev A0, Errata Section 3.1
@@ -339,10 +340,18 @@ static int m88e1518_config(struct phy_device *phydev)
 		m88e1518_phy_writebits(phydev, MIIM_88E151x_GENERAL_CTRL,
 				       MIIM_88E151x_RESET_OFFS, 1, 1);
 
-		/* Reset page selection */
-		phy_write(phydev, MDIO_DEVAD_NONE, MIIM_88E1118_PHY_PAGE, 0);
+		/* Set LED[1:0] def functoin */
+		phy_write(phydev, MDIO_DEVAD_NONE, MIIM_88E1118_PHY_PAGE, MIIM_88E1121_PHY_LED_PAGE);
+		phy_write(phydev, MDIO_DEVAD_NONE, MIIM_88E1121_PHY_LED_CTRL, MIIM_88E1121_PHY_LED_DEF);
+		/* Set LED[1:0] polarity */
+		reg = phy_read(phydev, MDIO_DEVAD_NONE, MIIM_88E1121_PHY_LED_CTRL + 1);
+		reg &= ~0xF;
+		reg |= 0xA;
+		phy_write(phydev, MDIO_DEVAD_NONE, MIIM_88E1121_PHY_LED_CTRL + 1, reg);
 
 		udelay(100);
+		/* Reset page selection */
+		phy_write(phydev, MDIO_DEVAD_NONE, MIIM_88E1118_PHY_PAGE, 0);
 	}
 
 	return m88e1111s_config(phydev);
