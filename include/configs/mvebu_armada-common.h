@@ -44,16 +44,23 @@
 					"fdt_name=armada-3720-catdrive.dtb\0"		\
 					"netdev=eth0\0"			\
 					"ethaddr=00:51:82:11:22:00\0"	\
-					"eth1addr=00:51:82:11:22:01\0"	\
-					"eth2addr=00:51:82:11:22:02\0"	\
-					"eth3addr=00:51:82:11:22:03\0"	\
-					"image_name=Image\0" \
-					"get_dtb=if test \\\"$fdt_name\\\" != \\\"-\\\";" \
-						"then " \
+					"mode=normal\0" \
+					"factory_os=menuboot-armada3720.bin\0" \
+					"update_os=catdrive_update\0" \
+					"normal_os=catdrive_normal\0" \
+					"image_name=-\0" \
+					"get_dtb=if test $fdt_name != -; then " \
 							"$get_dtb_medium $fdt_addr $fdt_name; " \
 							"setenv boot_cmd \"booti $kernel_addr - $fdt_addr\"; " \
 						"else " \
 							"setenv boot_cmd \"bootm $kernel_addr#config@1\"; " \
+						"fi\0"	\
+					"get_mode=if test $mode = factory; then " \
+							"setenv image_name $factory_os; " \
+						"elif  test $mode = update; then " \
+							"setenv image_name $update_os; " \
+						"else " \
+							"setenv image_name $normal_os; " \
 						"fi\0"	\
 					"get_images_tftp=setenv get_dtb_medium tftpboot; " \
 						"$get_dtb_medium $kernel_addr $image_name; " \
@@ -61,18 +68,19 @@
 					"get_images_usb=usb reset; setenv get_dtb_medium \"fatload usb 0\"; " \
 						"$get_dtb_medium $kernel_addr $image_name; "\
 						"run get_dtb\0"		\
-					"get_images_mmc=mmc dev 1; setenv get_dtb_medium \"fatload mmc 1:1\"; "\
+					"get_images_mmc=mmc dev 1; setenv get_dtb_medium \"ext4load mmc 1:1\"; "\
 						"$get_dtb_medium $kernel_addr $image_name; " \
 						"run get_dtb\0"	\
 					"console=" CONFIG_DEFAULT_CONSOLE "\0"\
-					"set_bootargs=setenv bootargs $console\0"\
-					"bootcmd_tftp=run get_images_tftp; run set_bootargs; "\
-						"$boot_cmd\0" \
-					"bootcmd_usb=run get_images_usb; run set_bootargs; "\
-						"$boot_cmd\0" \
-					"bootcmd_mmc=run get_images_mmc; run set_bootargs; "\
-						"$boot_cmd\0"
-#define CONFIG_BOOTCOMMAND	"run get_images_mmc; run set_bootargs; $boot_cmd"
+					"set_bootargs=if test $mode = factory; then " \
+							"setenv bootargs \"$console quiet\"; " \
+						"else " \
+							"setenv bootargs $console; " \
+						"fi\0"	\
+					"bootcmd_tftp=run get_mode; run get_images_tftp; run set_bootargs; ""$boot_cmd\0" \
+					"bootcmd_usb=run get_mode; run get_images_usb; run set_bootargs; $boot_cmd\0" \
+					"bootcmd_mmc=run get_mode; run get_images_mmc; run set_bootargs; $boot_cmd\0"
+#define CONFIG_BOOTCOMMAND	"run get_mode; run get_images_mmc; run set_bootargs; $boot_cmd"
 #define CONFIG_ENV_OVERWRITE	/* ethaddr can be reprogrammed */
 /*
  * For booting Linux, the board info and command line data
